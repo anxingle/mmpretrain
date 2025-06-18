@@ -1,1 +1,0 @@
-python ./tools/visualization/browse_dataset.py ./works/efficientNetV2_b0_v0.py --phase train --output-dir tmp --mode pipeline --show-number 100 --rescale-factor 1 --channel-order RGB

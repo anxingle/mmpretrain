@@ -149,3 +149,9 @@ model_params.txt
 *.ckpt*
 results.txt
 works/datasets/*
+tmp2/*
+tmp/*
+efficientNetV2_b0_v0/*
+randaug_visualization/*.png
+works/efficientNetV2_b0_v0/*
+works/efficientNetV2_xl_v0/*

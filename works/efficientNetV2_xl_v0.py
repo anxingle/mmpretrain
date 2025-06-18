@@ -1,5 +1,5 @@
 _base_ = [
-    '../configs/_base_/models/efficientnet_v2/efficientnetv2_b0.py',
+    '../configs/_base_/models/efficientnet_v2/efficientnetv2_xl.py',
     # '../configs/_base_/datasets/imagenet_bs32.py',
     '../configs/_base_/schedules/imagenet_bs256.py',
     '../configs/_base_/default_runtime.py',
@@ -8,7 +8,7 @@ _base_ = [
 # model settings
 model = dict(
     type='ImageClassifier',
-    backbone=dict(type='EfficientNetV2', arch='b0'),
+    backbone=dict(type='EfficientNetV2', arch='xl'),
     neck=dict(type='GlobalAveragePooling'),
     head=dict(
         type='LinearClsHead',
@@ -111,8 +111,8 @@ val_evaluator = dict(type='Accuracy', topk=1)
 test_evaluator = val_evaluator
 
 train_dataloader = dict(
-    batch_size=32,
-    num_workers=4,
+    batch_size=16,
+    num_workers=6,
     dataset=dict(
         type="CustomDataset",
         data_root='/home/an/mmpretrain/works/datasets/fat_thin_normal_datasets',
@@ -148,7 +148,7 @@ optim_wrapper = dict(
 param_scheduler = dict(
     type='MultiStepLR', by_epoch=True, milestones=[40, 80, 100], gamma=0.1)
 # train, val, test setting
-train_cfg = dict(by_epoch=True, max_epochs=400, val_interval=1)
+train_cfg = dict(by_epoch=True, max_epochs=400, val_interval=5)
 val_cfg = dict()
 test_cfg = dict()
 
@@ -166,7 +166,7 @@ default_hooks = dict(
     # enable the parameter scheduler.
     param_scheduler=dict(type='ParamSchedulerHook'),
     # save checkpoint per epoch.
-    checkpoint=dict(type='CheckpointHook', interval=1),
+    checkpoint=dict(type='CheckpointHook', interval=4, max_keep_ckpts=10, save_best="auto"),
     # set sampler seed in distributed evrionment.
     sampler_seed=dict(type='DistSamplerSeedHook'),
     # validation results visualization, set True to enable it.
@@ -190,9 +190,8 @@ visualizer = dict(type='UniversalVisualizer', vis_backends=vis_backends)
 # set log level
 log_level = 'INFO'
 # XXX: 加载预训练模型
-load_from = "/home/an/mmpretrain/works/efficientnetv2-b0_3rdparty_in1k_20221221-9ef6e736.pth"
+load_from = "/home/an/mmpretrain/works/efficientnetv2-xl_in21k-pre-3rdparty_in1k_20221220-583ac18b.pth"
 # XXX: 这里我们加载预训练权重初始化模型参数，不是恢复上一次的训练进度。
 resume = False
 # Defaults to use random seed and disable `deterministic`
 randomness = dict(seed=None, deterministic=False)
-
