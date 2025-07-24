@@ -155,3 +155,11 @@ efficientNetV2_b0_v0/*
 randaug_visualization/*.png
 works/efficientNetV2_b0_v0/*
 works/efficientNetV2_xl_v0/*
+works/b0_v0_analysis/*
+works/tiny2000_datasets/*
+works/datasets/*
+works/tiny_datasets/*
+works/efficientNetV2_b0_v1/*
+works/datasets6000_v1/*
+works/efficientNetV2_xl_v2_color/*
+works/train_interval_log/*
