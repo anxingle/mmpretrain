@@ -157,7 +157,13 @@ works/efficientNetV2_b0_v0/*
 works/efficientNetV2_xl_v0/*
 works/b0_v0_analysis/*
 works/tiny2000_datasets/*
-works/datasets/*
+works/datasets/color6000_*
+works/datasets/fat_thin_normal_datasets/*
+works/datasets/shape6000_0717/*
+works/datasets/test_color6000_0717_cropped_bbox/*
+works/datasets/test_fat_thin_normal_datasets/*
+works/datasets/test_tongue_colors_datasets_0623/*
+works/datasets/tongue_colors_datasets_0623/*
 works/tiny_datasets/*
 works/efficientNetV2_b0_v1/*
 works/datasets6000_v1/*

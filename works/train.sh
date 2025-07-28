@@ -5,6 +5,8 @@
 # python ./tools/train.py ./works/efficientNetV2_b0_v0.py --work-dir $PWD/works/efficientNetV2_b0_v0 --auto-scale-lr 
 
 # 训练脚本 EfficientNetV2_xl_v0
-python ./tools/train.py ./works/efficientNetV2_xl_v0.py --work-dir $PWD/works/efficientNetV2_xl_v0 --auto-scale-lr
+python ./tools/train.py ./works/efficientNetV2_xl_v2.py --work-dir $PWD/works/efficientNetV2_xl_v2_color --auto-scale-lr
 
 python ./tools/train.py ./works/efficientNetV2_b0_v2.py --work-dir $PWD/works/train_interval_log/efficientNetV2_b0_v2_color --auto-scale-lr
+
+python ./tools/train.py ./works/efficientNetV2_xl_v2.py --work-dir $PWD/works/efficientNetV2_xl_v2_color --auto-scale-lr
