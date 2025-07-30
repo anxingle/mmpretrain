@@ -12,7 +12,7 @@ model = dict(
     neck=dict(type='GlobalAveragePooling'),
     head=dict(
         type='LinearClsHead',
-        num_classes=4, # 舌色 白/红/绛/青
+        num_classes=4, # 舌色: 绛(779例)/青(178例)/淡红(4205例)/淡白(240例)
         in_channels=1280,
         loss=dict(
             type='CrossEntropyLoss',
@@ -34,7 +34,6 @@ data_preprocessor = dict(
 # 为什么这两行？
 # bgr_mean = data_preprocessor['mean'][::-1]
 # bgr_std = data_preprocessor['std'][::-1]
-
 # XXX: 1. 舌头图像分类需注意完整性
 #      2. 绝对不能有裁切操作；
 #      3. 不能改变舌头的颜色
