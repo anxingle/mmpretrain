@@ -2,7 +2,7 @@
 # using EfficientNetV2-XL
 
 _base_ = [
-    '../configs/_base_/models/efficientnet_v2/efficientnetv2_s.py',
+    '../configs/_base_/models/efficientnet_v2/efficientnetv2_xl.py',
     '../configs/_base_/schedules/imagenet_bs256.py',
     '../configs/_base_/default_runtime.py',
 ]
@@ -22,13 +22,21 @@ model = dict(
     ),
 )
 
-# dataset settings
+# # dataset settings
+# data_preprocessor = dict(
+#     num_classes=4,
+#     mean=[123.675, 116.28, 103.53],
+#     std=[58.395, 57.12, 57.375],
+#     to_rgb=True,
+#     # to_onehot=True,  # convert label lists to one-hot vectors for multi-label
+#     # Note: ClsDataPreprocessor doesn't support multi_label parameter
+#     # Multi-label handling is done in the loss function and head
+# )
 data_preprocessor = dict(
-    num_classes=4,
+    type='ClsDataPreprocessor',
     mean=[123.675, 116.28, 103.53],
     std=[58.395, 57.12, 57.375],
     to_rgb=True,
-    to_onehot=True,  # convert label lists to one-hot vectors for multi-label
 )
 
 # augmentation policy for tongue morphology
@@ -73,7 +81,12 @@ test_pipeline = [
 ]
 
 # multi-label evaluation metrics
-val_evaluator = dict(type='MultiLabelMetric', average='macro')
+# val_evaluator = dict(type='MultiLabelMetric', average='macro')
+val_evaluator = [
+    dict(type='MultiLabelMetric', average='macro'),  # 宏平均
+    dict(type='MultiLabelMetric', average='micro'),  # 微平均
+    dict(type='AveragePrecision', average='macro'),  # mAP
+]
 test_evaluator = val_evaluator
 
 train_dataloader = dict(
@@ -81,8 +94,8 @@ train_dataloader = dict(
     num_workers=8,
     dataset=dict(
         type='MultiLabelDataset',
-        data_root='/home/an/mmpretrain/works/datasets/tongue_shape_train',
-        ann_file='train.json',  # OpenMMLab 2.0 style annotation
+        data_root='/home/an/mmpretrain/works/datasets/body3_multilabel_train_fixed',
+        ann_file='train_annotations.json',  # OpenMMLab 2.0 style annotation
         pipeline=train_pipeline,
         metainfo=dict(classes=['teeth', 'swift', 'crack', 'normal']),
     ),
@@ -94,8 +107,8 @@ val_dataloader = dict(
     num_workers=8,
     dataset=dict(
         type='MultiLabelDataset',
-        data_root='/home/an/mmpretrain/works/datasets/tongue_shape_val',
-        ann_file='val.json',
+        data_root='/home/an/mmpretrain/works/datasets/body3_multilabel_train_fixed',
+        ann_file='val_annotations.json',
         pipeline=test_pipeline,
         metainfo=dict(classes=['teeth', 'swift', 'crack', 'normal']),
     ),
@@ -107,8 +120,8 @@ test_dataloader = dict(
     num_workers=8,
     dataset=dict(
         type='MultiLabelDataset',
-        data_root='/home/an/mmpretrain/works/datasets/tongue_shape_test',
-        ann_file='test.json',
+        data_root='/home/an/mmpretrain/works/datasets/body3_multilabel_test_fixed',
+        ann_file='test_annotations.json',
         pipeline=test_pipeline,
         metainfo=dict(classes=['teeth', 'swift', 'crack', 'normal']),
     ),
@@ -117,7 +130,10 @@ test_dataloader = dict(
 
 # optimizer
 optim_wrapper = dict(
-    optimizer=dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001))
+    optimizer=dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001),
+    paramwise_cfg=dict(norm_decay_mult=0.0, bias_decay_mult=0.0),
+    accumulative_counts=2,  # 每 2 个 iteration 累积一次梯度再更新: 解决显存不足问题，模拟更大的 batch_size; 保持训练稳定；
+)
 
 # learning policy
 param_scheduler = [
@@ -131,15 +147,15 @@ param_scheduler = [
     ),
     dict(
         type='CosineAnnealingLR',
-        T_max=400,
+        T_max=800,
         eta_min=1e-5,
         by_epoch=True,
         begin=30,
-        end=400,
+        end=800,
     ),
 ]
 
-train_cfg = dict(by_epoch=True, max_epochs=400, val_interval=5)
+train_cfg = dict(by_epoch=True, max_epochs=800, val_interval=10)
 val_cfg = dict()
 test_cfg = dict()
 
@@ -161,7 +177,7 @@ default_hooks = dict(
 
 # environment settings
 env_cfg = dict(
-    cudnn_benchmark=False,
+    cudnn_benchmark=True,
     mp_cfg=dict(mp_start_method='fork', opencv_num_threads=0),
     dist_cfg=dict(backend='nccl'),
 )
