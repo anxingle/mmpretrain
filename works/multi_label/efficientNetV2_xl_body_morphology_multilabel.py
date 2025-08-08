@@ -72,7 +72,7 @@ train_pipeline = [
 
     # 几何变换 - 适度使用，保持形态特征
     dict(type='RandomFlip', prob=0.5, direction='horizontal'),
-    dict(type='RandomRotation', angle=(-15, 15), prob=0.3),  # 小角度旋转
+    dict(type='RandomRotation', angle=(-5, 5), prob=0.3),  # 小角度旋转
 
     # 颜色增强 - 轻微调整，保持纹理可见性
     dict(
@@ -121,7 +121,7 @@ test_pipeline = [
 # 数据加载器配置
 # ============================================================================
 train_dataloader = dict(
-    batch_size=6,  # 降低batch size，XL模型显存需求大
+    batch_size=8,  # 降低batch size，XL模型显存需求大
     num_workers=8,
     dataset=dict(
         type="MultiLabelDataset",  # 改为多标签数据集
@@ -200,18 +200,18 @@ param_scheduler = [
     # 余弦退火
     dict(
         type="CosineAnnealingLR",
-        T_max=200,  # 总训练轮数
+        T_max=800,  # 总训练轮数
         eta_min=0.00001,
         by_epoch=True,
         begin=20,
-        end=200,
+        end=800,
     )
 ]
 
 # ============================================================================
 # 训练配置
 # ============================================================================
-train_cfg = dict(by_epoch=True, max_epochs=200, val_interval=5)
+train_cfg = dict(by_epoch=True, max_epochs=800, val_interval=10)
 val_cfg = dict()
 test_cfg = dict()
 
