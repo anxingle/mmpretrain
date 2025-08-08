@@ -4,9 +4,9 @@
 # 说明：一个舌体可能同时具有多种形态特征，也可能完全正常
 
 _base_ = [
-    '../configs/_base_/models/efficientnet_v2/efficientnetv2_s.py',
-    '../configs/_base_/schedules/imagenet_bs256.py',
-    '../configs/_base_/default_runtime.py',
+    '../../configs/_base_/models/efficientnet_v2/efficientnetv2_s.py',
+    # '../../configs/_base_/schedules/imagenet_bs256.py',  # 不继承调度器配置
+    '../../configs/_base_/default_runtime.py',
 ]
 
 # ============================================================================
@@ -31,11 +31,10 @@ model = dict(
         in_channels=1280,
         loss=dict(
             type='AsymmetricLoss',  # 非对称损失，适合多标签不平衡数据
-            gamma_neg=4,  # 负样本的focal参数
-            gamma_pos=1,  # 正样本的focal参数
+            gamma_neg=2,  # 负样本的focal参数，降低以减少对负样本的关注
+            gamma_pos=0,  # 正样本的focal参数，设为0以最大化对病变特征的关注
             clip=0.05,    # 梯度裁剪
-            eps=1e-8,
-            disable_torch_grad_focal_loss=True
+            eps=1e-8
         ),
         # 备选损失函数：BCEWithLogitsLoss
         # loss=dict(
@@ -72,17 +71,15 @@ train_pipeline = [
 
     # 几何变换 - 适度使用，保持形态特征
     dict(type='RandomFlip', prob=0.5, direction='horizontal'),
-    dict(type='RandomRotation', angle=(-5, 5), prob=0.3),  # 小角度旋转
 
     # 颜色增强 - 轻微调整，保持纹理可见性
     dict(
         type='ColorJitter',
-        brightness=0.15,   # 适度亮度调整，突出纹理
-        contrast=0.15,     # 适度对比度调整，增强边缘
-        saturation=0.10,   # 轻微饱和度调整
-        hue=0.02,          # 很小的色调调整
-        backend='pillow',
-        prob=0.4
+        brightness=0.18,   # 适度亮度调整，突出纹理
+        contrast=0.18,     # 适度对比度调整，增强边缘
+        saturation=0.15,   # 轻微饱和度调整
+        hue=[0.00001, 0.0199],          # 很小的色调调整
+        backend='pillow'
     ),
 
     # 轻微模糊 - 保持边缘特征
@@ -90,7 +87,7 @@ train_pipeline = [
         type='GaussianBlur',
         magnitude_range=(0.3, 0.6),
         magnitude_std='inf',
-        prob=0.3  # 降低模糊概率，保持纹理清晰
+        prob=0.4  # 降低模糊概率，保持纹理清晰
     ),
 
     # 尺寸调整 - 保持长宽比
@@ -125,7 +122,7 @@ train_dataloader = dict(
     num_workers=8,
     dataset=dict(
         type="MultiLabelDataset",  # 改为多标签数据集
-        data_root='/home/an/mmpretrain/works/datasets/body3_multilabel_train',
+        data_root='/home/an/mmpretrain/works/datasets/body3_multilabel_train_fixed',
         ann_file='train_annotations.json',  # 指定训练集标注文件
         pipeline=train_pipeline,
     ),
@@ -137,7 +134,7 @@ val_dataloader = dict(
     num_workers=8,
     dataset=dict(
         type="MultiLabelDataset",  # 改为多标签数据集
-        data_root='/home/an/mmpretrain/works/datasets/body3_multilabel_train',
+        data_root='/home/an/mmpretrain/works/datasets/body3_multilabel_train_fixed',
         ann_file='val_annotations.json',  # 指定验证集标注文件
         pipeline=test_pipeline,
     ),
@@ -149,7 +146,7 @@ test_dataloader = dict(
     num_workers=8,
     dataset=dict(
         type="MultiLabelDataset",  # 改为多标签数据集
-        data_root='/home/an/mmpretrain/works/datasets/body3_multilabel_test',
+        data_root='/home/an/mmpretrain/works/datasets/body3_multilabel_test_fixed',
         ann_file='test_annotations.json',  # 指定测试集标注文件
         pipeline=test_pipeline,
     ),
@@ -167,12 +164,14 @@ val_evaluator = [
 test_evaluator = val_evaluator
 
 # ============================================================================
-# 优化器配置
+# 优化器配置 - 完全重新定义，不继承基础配置
 # ============================================================================
+# 完全重新定义optim_wrapper，避免继承基础配置中的SGD+momentum
 optim_wrapper = dict(
+    type='OptimWrapper',
     optimizer=dict(
         type='AdamW',
-        lr=0.0005,  # 降低学习率，多标签任务更敏感
+        lr=0.0005,
         weight_decay=0.05,
         eps=1e-8,
         betas=(0.9, 0.999)
@@ -182,6 +181,7 @@ optim_wrapper = dict(
         bias_decay_mult=0.0,
         flat_decay_mult=0.0
     ),
+    clip_grad=dict(max_norm=1.0, norm_type=2)
 )
 
 # ============================================================================
@@ -215,6 +215,9 @@ train_cfg = dict(by_epoch=True, max_epochs=800, val_interval=10)
 val_cfg = dict()
 test_cfg = dict()
 
+# 自动缩放学习率
+auto_scale_lr = dict(base_batch_size=256)
+
 # ============================================================================
 # 钩子配置
 # ============================================================================
@@ -242,7 +245,7 @@ custom_hooks = [
         show=False,
         draw_gt=True,
         draw_pred=True,
-        out_dir='./tmp/xl_body_morphology_multilabel',
+        out_dir='./tmp/trae_sonnet4',
     ),
 ]
 

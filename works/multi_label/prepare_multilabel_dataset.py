@@ -5,9 +5,15 @@
 
 功能：
 1. 将单标签数据集转换为多标签格式
-2. 生成多标签标注文件
+2. 直接生成MMPretrain MultiLabelDataset格式的标注文件
 3. 数据集统计和验证
 4. 支持自定义标签组合规则
+5. 自动生成训练/验证/测试集分割
+
+更新说明：
+- 现在直接生成符合MMPretrain格式的注释文件（包含metainfo和data_list）
+- 无需再运行convert_annotation_format.py和fix_annotation_format.py
+- 同时保存legacy格式文件用于兼容性
 
 使用方法：
 python prepare_multilabel_dataset.py --input_dir datasets/body3_6000_0805_bbox --output_dir datasets/body3_multilabel
@@ -239,9 +245,29 @@ class MultiLabelDatasetPreparer:
                 'original_path': str(img_path)
             })
         
-        # 保存标注文件
+        # 保存标注文件 - MMPretrain MultiLabelDataset格式
         ann_file = output_path / 'annotations.json'
+        
+        # 转换为MMPretrain格式
+        mmpretrain_annotations = {
+            'metainfo': {
+                'classes': self.class_names
+            },
+            'data_list': []
+        }
+        
+        for ann in annotations:
+            mmpretrain_annotations['data_list'].append({
+                'img_path': f"images/{ann['filename']}",  # 添加images/前缀
+                'gt_label': ann['labels']
+            })
+        
         with open(ann_file, 'w', encoding='utf-8') as f:
+            json.dump(mmpretrain_annotations, f, indent=2, ensure_ascii=False)
+        
+        # 同时保存原始格式（用于兼容性）
+        legacy_ann_file = output_path / 'annotations_legacy.json'
+        with open(legacy_ann_file, 'w', encoding='utf-8') as f:
             json.dump({
                 'class_names': self.class_names,
                 'num_classes': self.num_classes,
@@ -325,7 +351,16 @@ class MultiLabelDatasetPreparer:
         with open(annotations_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
-        annotations = data['annotations']
+        # 检查输入文件格式并获取注释数据
+        if 'metainfo' in data and 'data_list' in data:
+            # 输入已经是MMPretrain格式
+            annotations = data['data_list']
+            class_names = data['metainfo']['classes']
+        else:
+            # 输入是旧格式
+            annotations = data['annotations']
+            class_names = data['class_names']
+        
         np.random.shuffle(annotations)
         
         total = len(annotations)
@@ -338,18 +373,43 @@ class MultiLabelDatasetPreparer:
             'test': annotations[val_end:]
         }
         
-        # 保存分割后的标注文件
+        # 保存分割后的标注文件 - MMPretrain格式
         base_path = Path(annotations_file).parent
+        
         for split_name, split_annotations in splits.items():
-            split_data = {
-                'class_names': data['class_names'],
-                'num_classes': data['num_classes'],
-                'annotations': split_annotations
+            # 生成MMPretrain格式
+            mmpretrain_data = {
+                'metainfo': {
+                    'classes': class_names
+                },
+                'data_list': []
             }
+            
+            for ann in split_annotations:
+                if 'img_path' in ann and 'gt_label' in ann:
+                    # 已经是MMPretrain格式
+                    mmpretrain_data['data_list'].append(ann)
+                else:
+                    # 转换旧格式
+                    mmpretrain_data['data_list'].append({
+                        'img_path': f"images/{ann['filename']}",  # 添加images/前缀
+                        'gt_label': ann['labels']
+                    })
             
             split_file = base_path / f'{split_name}_annotations.json'
             with open(split_file, 'w', encoding='utf-8') as f:
-                json.dump(split_data, f, indent=2, ensure_ascii=False)
+                json.dump(mmpretrain_data, f, indent=2, ensure_ascii=False)
+            
+            # 同时保存旧格式（用于兼容性）
+            legacy_split_data = {
+                'class_names': class_names,
+                'num_classes': len(class_names),
+                'annotations': split_annotations
+            }
+            
+            legacy_split_file = base_path / f'{split_name}_annotations_legacy.json'
+            with open(legacy_split_file, 'w', encoding='utf-8') as f:
+                json.dump(legacy_split_data, f, indent=2, ensure_ascii=False)
             
             print(f"{split_name} 集: {len(split_annotations)} 样本 -> {split_file}")
 
