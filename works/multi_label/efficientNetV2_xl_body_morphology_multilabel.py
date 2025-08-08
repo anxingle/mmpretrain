@@ -29,6 +29,7 @@ model = dict(
         type='MultiLabelLinearClsHead',  # 多标签分类头MultiLabelLinearHead
         num_classes=4,  # 齿痕舌、点刺舌、裂纹舌、正常
         in_channels=1280,
+        thr=0.5,  # 多标签分类阈值，预测分数大于0.5的标签被认为是正样本
         loss=dict(
             type='AsymmetricLoss',  # 非对称损失，适合多标签不平衡数据
             gamma_neg=2,  # 负样本的focal参数，降低以减少对负样本的关注

@@ -18,6 +18,7 @@ model = dict(
         num_classes=4,  # teeth-mark / dot-prick / crack / normal
         in_channels=1280,
         loss=dict(type='CrossEntropyLoss', use_sigmoid=True),
+        thr=0.5,  # threshold for positive predictions
         # positive predictions are determined by threshold=0.5 by default
     ),
 )
