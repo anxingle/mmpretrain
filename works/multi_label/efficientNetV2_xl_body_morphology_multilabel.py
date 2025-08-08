@@ -26,7 +26,7 @@ model = dict(
     ),
     neck=dict(type='GlobalAveragePooling'),
     head=dict(
-        type='MultiLabelLinearClsHead',  # 多标签分类头
+        type='MultiLabelLinearClsHead',  # 多标签分类头MultiLabelLinearHead
         num_classes=4,  # 齿痕舌、点刺舌、裂纹舌、正常
         in_channels=1280,
         loss=dict(
@@ -124,11 +124,10 @@ train_dataloader = dict(
     batch_size=6,  # 降低batch size，XL模型显存需求大
     num_workers=8,
     dataset=dict(
-        type="CustomDataset",
-        data_root='/home/an/mmpretrain/works/datasets/body3_6000_0805_bbox',  # 训练集路径
+        type="MultiLabelDataset",  # 改为多标签数据集
+        data_root='/home/an/mmpretrain/works/datasets/body3_multilabel_train',
+        ann_file='train_annotations.json',  # 指定训练集标注文件
         pipeline=train_pipeline,
-        # 多标签数据集需要特殊的标注格式
-        # 每个样本可能有多个标签：[1, 0, 1, 0] 表示同时有齿痕和裂纹
     ),
     sampler=dict(type='DefaultSampler', shuffle=True),
 )
@@ -137,8 +136,9 @@ val_dataloader = dict(
     batch_size=8,
     num_workers=8,
     dataset=dict(
-        type="CustomDataset",
-        data_root='/home/an/mmpretrain/works/datasets/test_body3_6000_0805_bbox',  # 验证集路径
+        type="MultiLabelDataset",  # 改为多标签数据集
+        data_root='/home/an/mmpretrain/works/datasets/body3_multilabel_train',
+        ann_file='val_annotations.json',  # 指定验证集标注文件
         pipeline=test_pipeline,
     ),
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -148,8 +148,9 @@ test_dataloader = dict(
     batch_size=16,
     num_workers=8,
     dataset=dict(
-        type="CustomDataset",
-        data_root='/home/an/mmpretrain/works/datasets/test_body3_6000_0805_bbox',  # 测试集路径
+        type="MultiLabelDataset",  # 改为多标签数据集
+        data_root='/home/an/mmpretrain/works/datasets/body3_multilabel_test',
+        ann_file='test_annotations.json',  # 指定测试集标注文件
         pipeline=test_pipeline,
     ),
     sampler=dict(type='DefaultSampler', shuffle=False),
