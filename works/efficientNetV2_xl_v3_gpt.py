@@ -17,7 +17,13 @@ model = dict(
         type='MultiLabelLinearClsHead',
         num_classes=4,  # teeth-mark / dot-prick / crack / normal
         in_channels=1280,
-        loss=dict(type='CrossEntropyLoss', use_sigmoid=True),
+        loss=dict(
+            type='AsymmetricLoss',
+            gamma_neg=2,
+            gamma_pos=0,
+            clip=0.05,
+            eps=1e-8,
+        ),
         thr=0.5,  # threshold for positive predictions
         # positive predictions are determined by threshold=0.5 by default
     ),
@@ -131,7 +137,7 @@ test_dataloader = dict(
 
 # optimizer
 optim_wrapper = dict(
-    optimizer=dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001),
+    optimizer=dict(type='SGD', lr=0.005, weight_decay=0.05),
     paramwise_cfg=dict(norm_decay_mult=0.0, bias_decay_mult=0.0),
     accumulative_counts=2,  # 每 2 个 iteration 累积一次梯度再更新: 解决显存不足问题，模拟更大的 batch_size; 保持训练稳定；
 )
@@ -156,7 +162,7 @@ param_scheduler = [
     ),
 ]
 
-train_cfg = dict(by_epoch=True, max_epochs=800, val_interval=10)
+train_cfg = dict(by_epoch=True, max_epochs=800, val_interval=5)
 val_cfg = dict()
 test_cfg = dict()
 
