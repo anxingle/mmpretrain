@@ -29,22 +29,23 @@ model = dict(
         type='MultiLabelLinearClsHead',  # 多标签分类头MultiLabelLinearHead
         num_classes=4,  # 齿痕舌、点刺舌、裂纹舌、正常
         in_channels=1280,
-        thr=0.5,  # 多标签分类阈值，预测分数大于0.5的标签被认为是正样本
-        loss=dict(
-            type='AsymmetricLoss',  # 非对称损失，适合多标签不平衡数据
-            gamma_neg=2,  # 负样本的focal参数，降低以减少对负样本的关注
-            gamma_pos=0,  # 正样本的focal参数，设为0以最大化对病变特征的关注
-            clip=0.05,    # 梯度裁剪
-            eps=1e-8
-        ),
-        # 备选损失函数：BCEWithLogitsLoss
+        # thr=0.5,  # 多标签分类阈值，预测分数大于0.5的标签被认为是正样本
+        thr=[0.35, 0.3, 0.4, 0.65], # 病例类别用更低的阈值
         # loss=dict(
-        #     type='BCEWithLogitsLoss',
-        #     use_sigmoid=True,
-        #     reduction='mean',
-        #     class_weight=[1.0, 1.0, 1.0, 1.0],  # 可根据数据分布调整
-        #     pos_weight=None  # 可设置正样本权重
+        #     type='AsymmetricLoss',  # 非对称损失，适合多标签不平衡数据
+        #     gamma_neg=2,  # 负样本的focal参数，降低以减少对负样本的关注
+        #     gamma_pos=0,  # 正样本的focal参数，设为0以最大化对病变特征的关注
+        #     clip=0.05,    # 梯度裁剪
+        #     eps=1e-8
         # ),
+        # 使用 CrossEntropyLoss 进行多标签分类
+        loss=dict(
+            type='CrossEntropyLoss',
+            use_sigmoid=True,
+            reduction='mean',
+            class_weight=[4.5, 4.0, 4.5, 1.0],  # 可根据数据分布调整
+            pos_weight=None  # 可设置正样本权重
+        ),
     )
 )
 
@@ -76,9 +77,9 @@ train_pipeline = [
     # 颜色增强 - 轻微调整，保持纹理可见性
     dict(
         type='ColorJitter',
-        brightness=0.18,   # 适度亮度调整，突出纹理
-        contrast=0.18,     # 适度对比度调整，增强边缘
-        saturation=0.15,   # 轻微饱和度调整
+        brightness=0.28,   # 适度亮度调整，突出纹理
+        contrast=0.38,     # 适度对比度调整，增强边缘
+        saturation=0.25,   # 轻微饱和度调整
         hue=[0.00001, 0.0199],          # 很小的色调调整
         backend='pillow'
     ),
@@ -86,9 +87,9 @@ train_pipeline = [
     # 轻微模糊 - 保持边缘特征
     dict(
         type='GaussianBlur',
-        magnitude_range=(0.3, 0.6),
+        magnitude_range=(0.1, 0.4),
         magnitude_std='inf',
-        prob=0.4  # 降低模糊概率，保持纹理清晰
+        prob=0.3  # 降低模糊概率，保持纹理清晰
     ),
 
     # 尺寸调整 - 保持长宽比
@@ -161,6 +162,10 @@ val_evaluator = [
     dict(type='MultiLabelMetric', average='macro'),  # 宏平均
     dict(type='MultiLabelMetric', average='micro'),  # 微平均
     dict(type='AveragePrecision', average='macro'),  # mAP
+    # 每类别详细指标
+    dict(type='MultiLabelMetric', average=None),
+    # 每类别的AP
+    dict(type='AveragePrecision', average=None)
 ]
 test_evaluator = val_evaluator
 
@@ -172,12 +177,16 @@ optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(
         type='AdamW',
-        lr=0.0005,
+        lr=0.0009,
         weight_decay=0.05,
         eps=1e-8,
         betas=(0.9, 0.999)
     ),
     paramwise_cfg=dict(
+        custom_keys={
+            'backbone': dict(lr_mult=0.8),        # 80%学习率，保持特征稳定
+            'head': dict(lr_mult=1.3),            # 130%学习率，加速病理学习
+        },
         norm_decay_mult=0.0,
         bias_decay_mult=0.0,
         flat_decay_mult=0.0
@@ -195,16 +204,16 @@ param_scheduler = [
         start_factor=0.01,
         by_epoch=True,
         begin=0,
-        end=20,  # 预热20个epoch
+        end=30,  # 预热20个epoch
         convert_to_iter_based=True,
     ),
     # 余弦退火
     dict(
         type="CosineAnnealingLR",
         T_max=800,  # 总训练轮数
-        eta_min=0.00001,
+        eta_min=0.00002,
         by_epoch=True,
-        begin=20,
+        begin=30,
         end=800,
     )
 ]
@@ -272,9 +281,8 @@ log_level = 'INFO'
 log_processor = dict(by_epoch=True)
 
 # 预训练权重
-# load_from = "/home/an/mmpretrain/works/efficientnetv2-xl_in21k-pre-3rdparty_in1k_20221220-583ac18b.pth"
-load_from = "/home/an/mmpretrain/works/train_interval_log/trae_v3_multilabl_final_fixed/epoch_180.pth"
-resume = True
+load_from = "/home/an/mmpretrain/works/efficientnetv2-xl_in21k-pre-3rdparty_in1k_20221220-583ac18b.pth"
+resume = False
 
 # 随机种子
 randomness = dict(seed=42, deterministic=False)
