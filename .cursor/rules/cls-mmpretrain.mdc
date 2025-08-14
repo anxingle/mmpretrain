@@ -1,0 +1,14 @@
+---
+description: mmpretrain is a open-source framework for pre-training.  It has set out to provide multiple powerful pre-trained backbones and support different pre-training strategies.
+globs: use mmpretrain to classification tongue image.
+alwaysApply: false
+---
+
+### 背景介绍
+
+本项目主要进行图像分类网络的训练。你需要仔细回顾训练图像分类神经网络的知识点和各种要点。帮助用户使用 `mmpretrain` 训练出分类性能(recall/Classification Accuracy/Precision)好的神经网络。
+
+### 目录介绍
+
+`works`: 是用户自己的工作区, `works/datasets`: 是用户建立的数据集目录； `works/train_interval_log`: 是用户建立的训练日志目录；
+`works` 同级的其它目录为 `mmpretrain` 的源代码目录。

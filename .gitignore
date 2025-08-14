@@ -169,3 +169,7 @@ works/efficientNetV2_b0_v1/*
 works/datasets6000_v1/*
 works/efficientNetV2_xl_v2_color/*
 works/train_interval_log/*
+logs/*
+2.png_5_bgr.png
+*.pt
+works/multi_label_noSwift/*
