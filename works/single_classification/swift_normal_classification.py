@@ -18,7 +18,7 @@ model = dict(
             # 类别权重：处理类别不平衡
             # normal:swift = 3345:2159 ≈ 1.55:1
             # 使用反比例权重：swift权重=3345/2159≈1.55, normal权重=1.0
-            class_weight=[1.5, 1.0],  # [swift, normal]
+            class_weight=[1.0, 2.5],  # [normal, swift]
             loss_weight=1.0),
         topk=(1,),  # 二分类只看top1准确率
     ))
@@ -233,9 +233,9 @@ log_level = 'INFO'
 
 # 加载预训练模型（EfficientNetV2-XL在ImageNet上的预训练权重）
 load_from = "/home/an/mmpretrain/works/efficientnetv2-xl_in21k-pre-3rdparty_in1k_20221220-583ac18b.pth"
-load_from = "/home/an/mmpretrain/logs/swift_cls/epoch_85.pth"
+# load_from = "/home/an/mmpretrain/logs/swift_cls/epoch_85.pth"
 # 不恢复训练（从头开始）
-resume = True
+resume = False
 
 # 随机性配置
 randomness = dict(seed=42, deterministic=False)  # 设置种子以保证可重复性

@@ -18,7 +18,7 @@ model = dict(
             # 类别权重：处理类别不平衡
             # normal:teeth = 3467:2037 ≈ 1.7:1
             # 使用反比例权重：teeth 权重=3467/2037≈1.7, normal权重=1.0
-            class_weight=[2.0, 1.0],  # [teeth, normal]
+            class_weight=[1.0, 2.5],  # [normal, teeth]
             loss_weight=1.0),
         topk=(1,),  # 二分类只看top1准确率
     ))
