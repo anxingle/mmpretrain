@@ -15,7 +15,7 @@ echo "=========================================="
 cd /home/an/mmpretrain
 export CUDA_VISIBLE_DEVICES=0 && python tools/train.py \
     works/single_classification/teeth_normal_classification.py \
-    --work-dir ./logs/teeth_cls \
+    --work-dir /data/logs/teeth_cls \
     2>&1 | tee ./training_teeth.log
 
 echo "训练完成！"

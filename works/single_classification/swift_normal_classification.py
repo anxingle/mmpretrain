@@ -18,7 +18,7 @@ model = dict(
             # 类别权重：处理类别不平衡
             # normal:swift = 3345:2159 ≈ 1.55:1
             # 使用反比例权重：swift权重=3345/2159≈1.55, normal权重=1.0
-            class_weight=[1.0, 2.5],  # [normal, swift]
+            class_weight=[1.0, 3.0],  # [normal, swift]
             loss_weight=1.0),
         topk=(1,),  # 二分类只看top1准确率
     ))
@@ -101,6 +101,7 @@ test_evaluator = val_evaluator
 train_dataloader = dict(
     batch_size=8,  # 根据显存调整
     num_workers=8,
+    # metainfo=dict(classes=['normal', 'swift']),
     dataset=dict(
         type="CustomDataset",
         data_root='/home/an/mmpretrain/works/datasets/swift_VS_normal_0812',
@@ -111,6 +112,7 @@ train_dataloader = dict(
 val_dataloader = dict(
     batch_size=16,
     num_workers=16,
+    # metainfo=dict(classes=['normal', 'swift']),
     dataset=dict(
         type="CustomDataset",
         data_root='/home/an/mmpretrain/works/datasets/tests_3multi/swift_VS_normal_0812_test',
@@ -121,6 +123,7 @@ val_dataloader = dict(
 test_dataloader = dict(
     batch_size=32,
     num_workers=32,
+    # metainfo=dict(classes=['normal', 'swift']),
     dataset=dict(
         type="CustomDataset",
         data_root='/home/an/mmpretrain/works/datasets/tests_3multi/swift_VS_normal_0812_test',
@@ -172,7 +175,7 @@ param_scheduler = [
 train_cfg = dict(
     by_epoch=True, 
     max_epochs=600,  # 总训练轮数
-    val_interval=5  # 每5个epoch验证一次
+    val_interval=2  # 每5个epoch验证一次
 )
 val_cfg = dict()
 test_cfg = dict()
@@ -194,8 +197,8 @@ default_hooks = dict(
     # 保存检查点
     checkpoint=dict(
         type='CheckpointHook', 
-        interval=5,  # 每5个epoch保存
-        max_keep_ckpts=10,  # 最多保留10个检查点
+        interval=2,  # 每5个epoch保存
+        max_keep_ckpts=40,  # 最多保留40个检查点
         save_best="auto"  # 自动保存最佳模型
     ),
     # 分布式采样器种子
@@ -213,7 +216,7 @@ custom_hooks = [
         show=False,
         draw_gt=True,
         draw_pred=True,
-        out_dir='./logs/vis_swift_normal',  # 可视化输出目录
+        out_dir='/data/logs/vis_swift_normal',  # 可视化输出目录
     ),
 ]
 
@@ -241,4 +244,4 @@ resume = False
 randomness = dict(seed=42, deterministic=False)  # 设置种子以保证可重复性
 
 # 工作目录（保存日志和检查点）
-work_dir = './logs/swift_cls'
+work_dir = '/data/logs/swift_cls'
