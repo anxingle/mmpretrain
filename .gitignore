@@ -173,3 +173,8 @@ logs/*
 2.png_5_bgr.png
 *.pt
 works/multi_label_noSwift/*
+augmentation_samples_rgb/*
+comparison_rgb/*
+visualize_augmented/*
+visualize_compare/*
+visualize_pipeline/*
