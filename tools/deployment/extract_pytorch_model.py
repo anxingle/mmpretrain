@@ -16,8 +16,8 @@ def extract_pure_pytorch_model(config_path, checkpoint_path, output_path, img_si
     return output_path
 
 if __name__ == '__main__':
-    config_path = 'works/efficientNetV2_xl_v2_WCE.py'
-    checkpoint_path = 'works/train_interval_log/efficientNetV2_xl_v2_WCE_color/epoch_400.pth'
-    output_path = 'efficientNetV2_xl_v2_WCE.pt'
+    config_path = '/home/an/mmpretrain/works/coat_cls/coat_color_classification.py'
+    checkpoint_path = '/data-ssd/logs/coat_color_cls_v3/epoch_400.pth'
+    output_path = '/data-ssd/logs/coat_color_cls_v3/coat_color_efficientNetV2.pt'
     
     extract_pure_pytorch_model(config_path, checkpoint_path, output_path, (384, 384))

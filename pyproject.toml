@@ -31,6 +31,7 @@ dynamic = ["version"]
 
 # Runtime dependencies
 dependencies = [
+    "albumentations>=2.0.8",
     "einops",
     "importlib-metadata",
     "mat4py",
@@ -40,7 +41,7 @@ dependencies = [
     "modelindex",
     "numpy",
     "rich",
-    "torch>=2.8.0",  # 确保支持 CUDA 12.9+
+    "torch>=2.8.0", # 确保支持 CUDA 12.9+
     "torchvision>=0.23.0",
 ]
 

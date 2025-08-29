@@ -179,3 +179,5 @@ visualize_augmented/*
 visualize_compare/*
 visualize_pipeline/*
 uv.lock
+augmentation_visualization/*
+augmentation_visualization_fixed/*

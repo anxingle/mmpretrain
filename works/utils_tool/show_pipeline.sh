@@ -8,7 +8,7 @@ python tools/visualization/browse_dataset.py works/single_classification/swift_n
     --not-show
 
 # 查看原图与增强后图片的对比
-python tools/visualization/browse_dataset.py works/single_classification/swift_normal_classification.py \
+python tools/visualization/browse_dataset.py works/coat_cls/coat_color_classification_show.py \
     --phase train \
     --mode concat \
     --show-number 20 \
@@ -17,10 +17,10 @@ python tools/visualization/browse_dataset.py works/single_classification/swift_n
     --not-show
 
 # 查看数据处理流水线的每个步骤
-python tools/visualization/browse_dataset.py works/single_classification/swift_normal_classification.py \
+python tools/visualization/browse_dataset.py works/coat_cls/coat_color_classification_show.py \
     --phase train \
     --mode pipeline \
-    --show-number 10 \
+    --show-number 200 \
     --output-dir visualize_pipeline \
-    --channel-order RGB \
+    --channel-order BGR \
     --not-show

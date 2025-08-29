@@ -1,26 +1,52 @@
 _base_ = [
-    '../../configs/_base_/models/efficientnet_v2/efficientnetv2_s.py',
-    # '../../configs/_base_/schedules/imagenet_bs256.py',
-    '../../configs/_base_/default_runtime.py',
+    '../../configs/_base_/models/convnext_v2/tiny.py',
+    # '../../configs/_base_/datasets/imagenet_bs64_swin_384.py',
+    '../../configs/_base_/schedules/imagenet_bs1024_adamw_swin.py',
+    # '../../configs/_base_/default_runtime.py',
 ]
 
 # 模型设置 - 二分类任务
+# model = dict(
+#     type='ImageClassifier',
+#     backbone=dict(type='EfficientNetV2', arch='s'),
+#     neck=dict(type='GlobalAveragePooling'),
+#     head=dict(
+#         type='LinearClsHead',
+#         num_classes=3,  # 灰(gray)/白(white)/黄(yellow) 
+#         in_channels=1280,
+#         loss=dict(
+#             type='CrossEntropyLoss',
+#             # 类别权重：处理类别不平衡
+#             # ('gray', 'white', 'yellow')数量为(22, 665, 1235)
+#             class_weight=[9.1, 2.0, 1.01],  # [gray, white, yellow]
+#             loss_weight=1.0),
+#         topk=(1,),  # 二分类只看top1准确率
+#     ))
+# Model settings
 model = dict(
     type='ImageClassifier',
-    backbone=dict(type='EfficientNetV2', arch='s'),
-    neck=dict(type='GlobalAveragePooling'),
+    backbone=dict(type='ConvNeXt', arch='tiny', drop_path_rate=0.2, layer_scale_init_value=0., use_grn=True),
     head=dict(
         type='LinearClsHead',
         num_classes=3,  # 灰(gray)/白(white)/黄(yellow) 
-        in_channels=1280,
+        in_channels=768,
+        # loss=dict(type='LabelSmoothLoss', label_smooth_val=0.2),
         loss=dict(
             type='CrossEntropyLoss',
             # 类别权重：处理类别不平衡
             # ('gray', 'white', 'yellow')数量为(22, 665, 1235)
             class_weight=[9.1, 2.0, 1.01],  # [gray, white, yellow]
             loss_weight=1.0),
-        topk=(1,),  # 二分类只看top1准确率
-    ))
+        init_cfg=None,
+        _delete_ = True # 这将完全删除基础配置中的 head 设置
+    ),
+    init_cfg=dict(
+        type='TruncNormal', layer=['Conv2d', 'Linear'], std=.02, bias=0.),
+    # train_cfg=dict(augments=[
+    #     dict(type='Mixup', alpha=0.8),
+    #     # dict(type='CutMix', alpha=1.0),
+    # ]),
+)
 
 # 数据预处理设置
 data_preprocessor = dict(
@@ -42,9 +68,9 @@ train_pipeline = [
     # 随机小角度旋转
     dict(
         type='Rotate',
-        angle=15,  # 最大旋转角度15度
+        angle=12,  # 最大旋转角度12度
         prob=0.6,  # 60%的概率应用旋转
-        random_negative_prob=0.5,  # 随机方向旋转正或负15度
+        random_negative_prob=0.5,  # 随机方向旋转正或负12度
         pad_val=0,  # 旋转后空白区域填充黑色，与Pad一致
         interpolation='bilinear'
     ),
@@ -52,7 +78,7 @@ train_pipeline = [
     dict(type='Translate', magnitude=0.05, prob=0.3, direction='horizontal', pad_val=0),
     dict(type='Translate', magnitude=0.05, prob=0.3, direction='vertical', pad_val=0),
     # 随机缩放、裁剪
-    dict(type='RandomResizedCrop', scale=384, crop_ratio_range=(0.95, 1.0), backend='pillow'),
+    dict(type='RandomResizedCrop', scale=384, crop_ratio_range=(0.95, 1.0), backend='pillow', interpolation='bicubic'),
     # Mixup - 暂时注释掉，避免错误
     # dict(type='Mixup', alpha=0.8, num_classes=3, probs=0.2),
     # XXX: 舌苔颜色 (灰、白、黄) 必须考虑 色彩、亮度、对比度、饱和度 的增强！ 
@@ -69,7 +95,7 @@ train_pipeline = [
     dict(
         type='Albu',
         transforms=[
-            dict(type='GaussNoise', std_range=(0.01, 0.025), p=0.9),   # 高斯噪声（1%-2.5%的标准差）
+            dict(type='GaussNoise', std_range=(0.02, 0.03), p=0.9),   # 高斯噪声（2%-3%的标准差）
             # 可选：ISO 噪声（相机更像），二选一不要都开
             # dict(type='ISONoise', color_shift=(0.01, 0.03), intensity=(0.05, 0.15), p=0.0),
         ],
@@ -124,7 +150,7 @@ test_evaluator = val_evaluator
 
 # 数据加载器配置
 train_dataloader = dict(
-    batch_size=8,  # 根据显存调整
+    batch_size=16,  # 根据显存调整
     num_workers=8,
     # metainfo=dict(classes=['gray', 'white', 'yellow]),
     dataset=dict(
@@ -135,7 +161,7 @@ train_dataloader = dict(
 )
 
 val_dataloader = dict(
-    batch_size=8,
+    batch_size=16,
     num_workers=8,
     # metainfo=dict(classes=['gray', 'white', 'yellow]),
     dataset=dict(
@@ -146,7 +172,7 @@ val_dataloader = dict(
 )
 
 test_dataloader = dict(
-    batch_size=8,
+    batch_size=16,
     num_workers=8,
     # metainfo=dict(classes=['gray', 'white', 'yellow]),
     dataset=dict(
@@ -156,12 +182,12 @@ test_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False),
 )
 
-# 优化器配置
+# schedule setting
 optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(
-        type='AdamW',  # 使用AdamW优化器，对于视觉任务效果更好
-        lr=0.0008,  # 初始学习率
+        type='AdamW',
+        lr=0.001,  # 这个学习率是正常的
         weight_decay=0.01,
         eps=1e-8,
         betas=(0.9, 0.999)
@@ -174,39 +200,35 @@ optim_wrapper = dict(
     clip_grad=dict(max_norm=1.0, norm_type=2)
 )
 
-# 学习率调度策略
+# learning policy - 重写以避免继承问题
 param_scheduler = [
-    # 预热阶段（前10个epoch）
     dict(
         type='LinearLR',
-        start_factor=0.001,  # 从0.001倍开始
+        start_factor=0.001,
         by_epoch=True,
         begin=0,
-        end=10,
+        end=10,  # ← 缩短预热期
         convert_to_iter_based=True,
     ),
-    # 余弦退火阶段
     dict(
         type="CosineAnnealingLR",
-        T_max=400,  # 总训练轮数
-        eta_min=0.00001,  # 最小学习率
+        T_max=400,
+        eta_min=0.00001,
         by_epoch=True,
         begin=10,
         end=400,
     )
 ]
 
-# 训练配置
+# 训练配置 - 重写
 train_cfg = dict(
     by_epoch=True, 
-    max_epochs=400,  # 总训练轮数
-    val_interval=2  # 每2个epoch验证一次
+    max_epochs=400,
+    val_interval=2
 )
-val_cfg = dict()
-test_cfg = dict()
 
-# 自动学习率缩放（根据batch size）
-auto_scale_lr = dict(base_batch_size=256)
+# ⚠️ 关键修复：禁用自动学习率缩放
+auto_scale_lr = dict(enable=False)  # ← 添加这行！
 
 # 运行时配置
 default_scope = 'mmpretrain'
@@ -260,7 +282,7 @@ visualizer = dict(type='UniversalVisualizer', vis_backends=vis_backends)
 log_level = 'INFO'
 
 # 加载预训练模型（EfficientNetV2-XL在ImageNet上的预训练权重）
-load_from = "/home/an/mmpretrain/works/efficientnetv2-s_in21k-pre-3rdparty_in1k_20221220-7a7c8475.pth"
+load_from = "/home/an/mmpretrain/works/convnext-v2-tiny_fcmae-in21k-pre_3rdparty_in1k-384px_20230104-d8579f84.pth"
 # 不恢复训练（从头开始）
 resume = False
 
@@ -268,4 +290,4 @@ resume = False
 randomness = dict(seed=42, deterministic=False)  # 设置种子以保证可重复性
 
 # 工作目录（保存日志和检查点）
-work_dir = '/data-ssd/logs/coat_color_cls_v3'
+work_dir = '/data-ssd/logs/coat_color_convNextV2_tiny'

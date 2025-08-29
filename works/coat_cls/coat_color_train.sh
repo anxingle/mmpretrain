@@ -13,9 +13,6 @@ echo "=========================================="
 
 # 正确的训练命令
 cd /home/an/mmpretrain
-export CUDA_VISIBLE_DEVICES=0 && python tools/train.py \
-    works/coat_cls/coat_color_classification.py \
-    --work-dir /data-ssd/logs/coat_color_cls \
-    2>&1 | tee ./training_coat_color.log
+export CUDA_VISIBLE_DEVICES=0 && nohup python tools/train.py  works/coat_cls/coat_color_classification.py  --work-dir /data-ssd/logs/coat_color_cls 2>&1 >> train_cls.log &
 
 echo "训练完成！"

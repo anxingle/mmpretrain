@@ -38,28 +38,28 @@ train_pipeline = [
     dict(type='LoadImageFromFile'),
     
     # 1. 水平翻转（舌体左右对称，可以翻转）
-    dict(type='RandomFlip', prob=0.5, direction='horizontal'),
+    dict(type='RandomFlip', prob=1.0, direction='horizontal'),
     # 随机小角度旋转
     dict(
         type='Rotate',
         angle=15,  # 最大旋转角度15度
-        prob=0.6,  # 60%的概率应用旋转
+        prob=0.99,  # 30%的概率应用旋转
         random_negative_prob=0.5,  # 随机方向旋转正或负15度
         pad_val=0,  # 旋转后空白区域填充黑色，与Pad一致
         interpolation='bilinear'
     ),
     # 随机平移
-    dict(type='Translate', magnitude=0.05, prob=0.3, direction='horizontal', pad_val=0),
-    dict(type='Translate', magnitude=0.05, prob=0.3, direction='vertical', pad_val=0),
+    dict(type='Translate', magnitude=0.05, prob=0.99, direction='horizontal', pad_val=0),
+    dict(type='Translate', magnitude=0.05, prob=0.99, direction='vertical', pad_val=0),
     # 随机缩放、裁剪
     dict(type='RandomResizedCrop', scale=384, crop_ratio_range=(0.95, 1.0), backend='pillow'),
-    # Mixup - 暂时注释掉，避免错误
-    # dict(type='Mixup', alpha=0.8, num_classes=3, probs=0.2),
+    # Mixup - 注释掉，因为这是批次级增强，不是图像级转换
+    # dict(type='Mixup', alpha=0.8, num_classes=3, probs=0.9),
     # XXX: 舌苔颜色 (灰、白、黄) 必须考虑 色彩、亮度、对比度、饱和度 的增强！ 
     # XXX: 慎用 ColorJitter， 会改变颜色！所以必须
     dict(
         type='ColorJitter',
-        brightness=0.04, # 亮度扰动范围 98%~1020% 之间随机调整
+        brightness=0.04, # 亮度扰动范围 98%~102% 之间随机调整
         contrast=0.04, # 对比度
         saturation=0.04, # 饱和度
         hue=[0.001, 0.01], # 色调偏移范围
@@ -69,7 +69,7 @@ train_pipeline = [
     dict(
         type='Albu',
         transforms=[
-            dict(type='GaussNoise', std_range=(0.01, 0.025), p=0.9),   # 高斯噪声（1%-2.5%的标准差）
+            dict(type='GaussNoise', std_range=(0.01, 0.025), p=0.99),   # 高斯噪声（1%-2.5%的标准差）
             # 可选：ISO 噪声（相机更像），二选一不要都开
             # dict(type='ISONoise', color_shift=(0.01, 0.03), intensity=(0.05, 0.15), p=0.0),
         ],
@@ -80,7 +80,7 @@ train_pipeline = [
         type='GaussianBlur',
         magnitude_range=(0.2, 0.5),  # 较轻的模糊程度
         magnitude_std='inf',
-        prob=0.8  # 80%概率应用模糊
+        prob=0.99  # 40%概率应用模糊
     ),
     
     # 3. 调整图像尺寸（保持长宽比，避免变形）
@@ -129,7 +129,7 @@ train_dataloader = dict(
     # metainfo=dict(classes=['gray', 'white', 'yellow]),
     dataset=dict(
         type="CustomDataset",
-        data_root='/data-ssd/coating6000_color_v2/',
+        data_root='/data-ssd/coating6000_color/',
         pipeline=train_pipeline),
     sampler=dict(type='DefaultSampler', shuffle=True),
 )
@@ -140,7 +140,7 @@ val_dataloader = dict(
     # metainfo=dict(classes=['gray', 'white', 'yellow]),
     dataset=dict(
         type="CustomDataset",
-        data_root='/data-ssd/coating6000_color_v2_test/',
+        data_root='/data-ssd/coating6000_color_test/',
         pipeline=test_pipeline),
     sampler=dict(type='DefaultSampler', shuffle=False),
 )
@@ -151,7 +151,7 @@ test_dataloader = dict(
     # metainfo=dict(classes=['gray', 'white', 'yellow]),
     dataset=dict(
         type="CustomDataset",
-        data_root='/data-ssd/coating6000_color_v2_test/',
+        data_root='/data-ssd/coating6000_color_test/',
         pipeline=test_pipeline),
     sampler=dict(type='DefaultSampler', shuffle=False),
 )
@@ -268,4 +268,4 @@ resume = False
 randomness = dict(seed=42, deterministic=False)  # 设置种子以保证可重复性
 
 # 工作目录（保存日志和检查点）
-work_dir = '/data-ssd/logs/coat_color_cls_v3'
+work_dir = '/data-ssd/logs/coat_color_cls'
